@@ -19,6 +19,7 @@ print(tbl.commute <- tbl(commute.src, sql("
 
 print(i.bbox <- make_bbox(long, lat, tbl.commute, f=0.2))
 i.osm <- get_openstreetmap(bbox = i.bbox, scale=1E5, messaging=TRUE)
+#i.osm <- get_googlemap(tbl.commute %>% summarize(lon=mean(range(long)),lat=mean(range(lat))) %$% c(lon,lat),zoom=11)
 
 glimpse(tbl.prep <- tbl.commute %>%
   mutate(
@@ -38,6 +39,7 @@ plt.commute <- ggmap(
       ,color=duration_min
       )
     )
+  ,darken = c(0.4, 'white')
   ) + 
   geom_point(
     aes(alpha=1/sqrt(accuracy))
@@ -55,7 +57,7 @@ plt.commute <- ggmap(
     )+
   scale_color_gradientn(
     "Duration\n(Minutes)"
-    ,colours=rev(brewer.pal(11, 'RdYlBu'))[-6]
+    ,colours=rev(brewer.pal(11, 'RdBu'))[-(5:7)]
     )
 plt.commute
 ggsave(
