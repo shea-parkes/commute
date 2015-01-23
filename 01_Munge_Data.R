@@ -5,29 +5,41 @@ library(ggmap)
 library(scales)
 library(RColorBrewer)
 
-print(dir.data <- paste0(Sys.getenv('UserProfile'),'/Google Drive/Skunkworks_OnePlus/'))
-print(commute.src <- src_sqlite(paste0(dir.data,'commute.sqlite')))
+dir.data <- paste0(Sys.getenv('UserProfile'),'/Google Drive/Skunkworks_OnePlus/') %T>% print()
+commute.src <- src_sqlite(paste0(dir.data,'commute.sqlite')) %T>% print()
 
-print(tbl.commute <- tbl(commute.src, sql("
+tbl.commute <- tbl(commute.src, sql("
   SELECT src.*,ref.duration_min
   FROM location as src
   INNER JOIN commute as ref on
     src.date = ref.date
     and src.time between (ref.time - ref.duration_min/60 - 1) and (ref.time + 1)
   ORDER BY src.date, src.time desc
-")) %>% collect())
+")) %>%
+  collect() %T>%
+  print()
 
 print(i.bbox <- make_bbox(long, lat, tbl.commute, f=0.2))
 i.osm <- get_openstreetmap(bbox = i.bbox, scale=1E5, messaging=TRUE)
-#i.osm <- get_googlemap(tbl.commute %>% summarize(lon=mean(range(long)),lat=mean(range(lat))) %$% c(lon,lat),zoom=11)
+if(is.null(i.osm)){
+  i.osm <- get_googlemap(
+    tbl.commute %>%
+      summarize(
+        lon=mean(range(long))
+        ,lat=mean(range(lat))
+      ) %$%
+    c(lon,lat)
+  ,zoom=11
+  )
+}
 
-glimpse(tbl.prep <- tbl.commute %>%
+tbl.prep <- tbl.commute %>%
   mutate(
     fuzzy_acc = factor(ifelse(accuracy<420,'Good','Bad'))
     ,direction = factor(ifelse(time>12,'Evening','Morning'))
     ,date_direction = factor(paste0(date,as.character(direction)))
-  ))
-
+  ) %T>%
+  glimpse()
 
 plt.commute <- ggmap(
   i.osm
