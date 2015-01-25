@@ -86,24 +86,26 @@ ggsave(
 #' Make the grid of points to measure
 n.tiles.wide <- 420L
 i.tiles <- expand.grid(
+  ## The column order should be (lon,lat) for nearest.dist()
+  ## The sequence order inside the columns are important for making the raster matrix
   lon = seq(i.bbox['left'], i.bbox['right'], length.out = n.tiles.wide)
-  ,lat = seq(i.bbox['bottom'], i.bbox['top'], length.out = n.tiles.wide)
+  ,lat = seq(i.bbox['top'], i.bbox['bottom'], length.out = n.tiles.wide)
   )
 
 #' Calculate distances between measurement points and observed points
 threshold.miles <- 1.5 ## Distances above this do not get captured
 i.dist <- nearest.dist(
   x=as.matrix(tbl.prep %>% select(long, lat)) ## Observed
-  ,y=as.matrix(i.tiles) ## Measured
+  ,y=as.matrix(i.tiles[,c('lon','lat')]) ## Measured
   ,method='greatcircle'
   ,delta = threshold.miles * (360/(3963.34*2*pi)) ##Converts from miles to necessary ~delta
   )
 hist(i.dist@entries, breaks='FD')
 
 #' Calculate weights from distances
+max(i.dist@entries) ## Should be almost equal to threshold.miles (with floating point error)
 i.dist.wgt <- i.dist
-max(i.dist.wgt@entries) ## Should be almost equal to threshold.miles (with floating point error)
-i.dist.wgt@entries <- i.dist.wgt@entries / (max(i.dist.wgt@entries)*(1 + 1e-6)) ## Normalize them to (0,1)
+i.dist.wgt@entries <- i.dist.wgt@entries / (max(i.dist.wgt@entries)*(1 + 1e-6)) ## Normalize them to (0,1) prior to applying kernel
 ## Kernel work explained here: http://en.wikipedia.org/wiki/Kernel_(statistics)
 #i.dist.wgt@entries <- exp(-1*(i.dist.wgt@entries^2)/2) ##Gaussian Kernel (improper support)
 #i.dist.wgt@entries <- (1-i.dist.wgt@entries^2) ## Epanechnikov
@@ -119,7 +121,7 @@ hist(i.tiles$denom, breaks=42)
 i.tiles %<>% mutate(
     duration_min_avg = num / denom
     ,alpha = pmin(denom, quantile(denom,0.95))
-    ,alpha.scale = (alpha / max(alpha))^0.42
+    ,alpha.scale = (alpha / max(alpha))^0.5
     ,duration_min_avg.cap = pmax(
       pmin(
         duration_min_avg
@@ -167,7 +169,13 @@ plt.heat <- ggmap(
 scale_colour_gradientn(
   'Commute Time\n(Minutes)'
   ,guide = "colorbar"
-  ,limits = range(i.tiles$duration_min_avg[!ind.empty])
+  ,limits = range(i.tiles$duration_min_avg.cap[!ind.empty])
   ,colours=MyRampWrap(seq(0,1,by=0.05))
   )
 plt.heat
+ggsave(
+  paste0(dir.data,'commute_heat.png')
+  ,plt.heat
+  ,width=12
+  ,height=12
+  )
