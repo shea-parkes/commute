@@ -139,8 +139,8 @@ hist(i.tiles$duration_min_avg.scale, breaks=42)
 summary(i.tiles)
 
 #' Calculate an interesting color to help build a raster object
-#MyRamp <- colorRamp(brewer.pal(11, 'RdBu')[-(5:7)]) ## A more direct Red<>Blue
-MyRamp <- colorRamp(brewer.pal(11, 'RdYlBu')) ## Traverse Red<>Yellow<>Blue
+#MyRamp <- colorRamp(rev(brewer.pal(11, 'RdBu')[-(5:7)])) ## A more direct Red<>Blue
+MyRamp <- colorRamp(rev(brewer.pal(11, 'RdYlBu'))) ## Traverse Red<>Yellow<>Blue
 MyRampWrap <- function(i.color.norm, i.alpha.norm=1, i.ramp.func = MyRamp) {
   i.color.ramp <- i.ramp.func(i.color.norm)
   rgb(i.color.ramp[,1], i.color.ramp[,2], i.color.ramp[,3], i.alpha.norm*255, maxColorValue = 255L)
@@ -157,11 +157,17 @@ my.raster <- matrix(i.tiles$raster.color, nrow=n.tiles.wide, byrow=TRUE)
 #' Plot the resulting heat map
 plt.heat <- ggmap(
   i.osm
-  ,darken = c(0.3, 'white')
+  ,darken = c(0.5, 'white')
   ) + 
   inset_raster(
     my.raster
     ,xmin = i.bbox['left'], xmax=i.bbox['right']
     ,ymin=i.bbox['bottom'],ymax=i.bbox['top']
-    )
+    ) +
+scale_colour_gradientn(
+  'Commute Time\n(Minutes)'
+  ,guide = "colorbar"
+  ,limits = range(i.tiles$duration_min_avg[!ind.empty])
+  ,colours=MyRampWrap(seq(0,1,by=0.05))
+  )
 plt.heat
