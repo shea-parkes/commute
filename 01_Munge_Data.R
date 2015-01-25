@@ -91,7 +91,7 @@ i.tiles <- expand.grid(
   )
 
 #' Calculate distances between measurement points and observed points
-threshold.miles <- 2.5 ## Distances above this do not get captured
+threshold.miles <- 1.5 ## Distances above this do not get captured
 i.dist <- nearest.dist(
   x=as.matrix(tbl.prep %>% select(long, lat)) ## Observed
   ,y=as.matrix(i.tiles) ## Measured
@@ -102,7 +102,14 @@ hist(i.dist@entries, breaks='FD')
 
 #' Calculate weights from distances
 i.dist.wgt <- i.dist
-i.dist.wgt@entries <- 1/(exp(i.dist.wgt@entries^2))
+max(i.dist.wgt@entries) ## Should be almost equal to threshold.miles (with floating point error)
+i.dist.wgt@entries <- i.dist.wgt@entries / (max(i.dist.wgt@entries)*(1 + 1e-6)) ## Normalize them to (0,1)
+## Kernel work explained here: http://en.wikipedia.org/wiki/Kernel_(statistics)
+#i.dist.wgt@entries <- exp(-1*(i.dist.wgt@entries^2)/2) ##Gaussian Kernel (improper support)
+#i.dist.wgt@entries <- (1-i.dist.wgt@entries^2) ## Epanechnikov
+#i.dist.wgt@entries <- (1-i.dist.wgt@entries^2)^2 ## Quartic (biweight) Kernel
+i.dist.wgt@entries <- (1-i.dist.wgt@entries^2)^3 ## Triweight
+#i.dist.wgt@entries <- cos(i.dist.wgt@entries*pi/2) ## Cosine
 hist(i.dist.wgt@entries, breaks='FD')
 
 #' Bring back information to the measurement points
@@ -112,7 +119,7 @@ hist(i.tiles$denom, breaks=42)
 i.tiles %<>% mutate(
     duration_min_avg = num / denom
     ,alpha = pmin(denom, quantile(denom,0.95))
-    ,alpha.scale = alpha / max(alpha)
+    ,alpha.scale = (alpha / max(alpha))^0.42
     ,duration_min_avg.cap = pmax(
       pmin(
         duration_min_avg
@@ -132,7 +139,8 @@ hist(i.tiles$duration_min_avg.scale, breaks=42)
 summary(i.tiles)
 
 #' Calculate an interesting color to help build a raster object
-MyRamp <- colorRamp(brewer.pal(11, 'RdBu')[-(5:7)])
+#MyRamp <- colorRamp(brewer.pal(11, 'RdBu')[-(5:7)]) ## A more direct Red<>Blue
+MyRamp <- colorRamp(brewer.pal(11, 'RdYlBu')) ## Traverse Red<>Yellow<>Blue
 MyRampWrap <- function(i.color.norm, i.alpha.norm=1, i.ramp.func = MyRamp) {
   i.color.ramp <- i.ramp.func(i.color.norm)
   rgb(i.color.ramp[,1], i.color.ramp[,2], i.color.ramp[,3], i.alpha.norm*255, maxColorValue = 255L)
@@ -142,7 +150,7 @@ i.tiles$raster.color <- rgb(0,0,0,0)
 ind.empty <- is.na(i.tiles$duration_min_avg.scale) %T>% {mean(.) %>% print()}
 i.tiles$raster.color[!ind.empty] <- MyRampWrap(
   i.tiles$duration_min_avg.scale[!ind.empty]
-  ,sqrt(i.tiles$alpha.scale[!ind.empty])
+  ,i.tiles$alpha.scale[!ind.empty]
   )
 my.raster <- matrix(i.tiles$raster.color, nrow=n.tiles.wide, byrow=TRUE)
 
