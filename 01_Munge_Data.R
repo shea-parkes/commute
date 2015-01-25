@@ -20,9 +20,9 @@ tbl.commute <- tbl(commute.src, sql("
   collect() %T>%
   print()
 
-i.bbox <- make_bbox(long, lat, tbl.commute) %T>% print()
+i.bbox <- make_bbox(long, lat, tbl.commute, f = 0.1) %T>% print()
 i.osm <- get_openstreetmap(bbox = i.bbox, scale=1E5, messaging=TRUE)
-if(is.null(i.osm)){
+if(!exists('i.osm')){
   i.osm <- get_googlemap(
     tbl.commute %>%
       summarize(
