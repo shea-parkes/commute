@@ -17,11 +17,7 @@ fluidPage(
     )
     ,mainPanel(
       'Commuting Heatmap'
-      ,plotOutput(
-        'heatmap'
-         # ,width = 'auto'
-         ,height = '600px'
-        )
+      ,plotOutput('heatmap')
     )
   )
 )

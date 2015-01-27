@@ -45,7 +45,7 @@ MyRampWrap <- function(i.color.norm, i.alpha.norm=1, i.ramp.func = MyRamp) {
   rgb(i.color.ramp[,1], i.color.ramp[,2], i.color.ramp[,3], i.alpha.norm*255, maxColorValue = 255L)
 }
 
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
   output$heatmap <- renderPlot({
     mtx.dist.kde <- nearest.dist(
       x=tbl.commute %>% select(long, lat) %>% as.matrix() ## Observed
@@ -108,5 +108,7 @@ shinyServer(function(input, output) {
       )
     plt.heat
     
-  })
+  }
+  ,height = function() session$clientData$output_heatmap_width
+  )
 })
