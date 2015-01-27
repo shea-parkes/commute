@@ -9,15 +9,19 @@ fluidPage(
         'kernel.bandwidth.miles'
         ,'Kernel Bandwidth\n(in miles)'
         ,min = 0.1
-        ,max = 10
+        ,max = 5
         ,step = 0.1
         ,value = 1
         ,round = -1
       )
     )
     ,mainPanel(
-      'Pretty Visuals'
-      ,textOutput('silly')
+      'Commuting Heatmap'
+      ,plotOutput(
+        'heatmap'
+         # ,width = 'auto'
+         ,height = '600px'
+        )
     )
   )
 )
