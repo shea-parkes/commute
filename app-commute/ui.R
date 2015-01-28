@@ -1,4 +1,4 @@
-#library(shiny)
+library(shiny)
 
 fluidPage(
   titlePanel('Milliman Carmel Commuters')
@@ -17,7 +17,7 @@ fluidPage(
     )
     ,mainPanel(
       'Commuting Heatmap'
-      ,plotOutput('heatmap')
+      ,plotOutput('heatmap', height='600px')
     )
   )
 )
