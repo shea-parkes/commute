@@ -1,5 +1,6 @@
 library(dplyr)
 library(magrittr)
+library(RSQLite)
 library(ggmap)
 library(scales)
 library(RColorBrewer)
@@ -22,9 +23,9 @@ GenerateComponents <- function(commute.src) {
   
   i.bbox <- make_bbox(long, lat, tbl.commute, f = 0.1)
   
-  i.osm <- get_openstreetmap(bbox = i.bbox, scale=1E5, messaging=TRUE)
+  try(i.osm <- get_openstreetmap(bbox = i.bbox, scale=1E5, messaging=TRUE))
   if(!exists('i.osm')){ ## OSM web API will often deny queries under load, so cache some results
-    i.osm <- loadRDS('cache.osm.RDS')
+    i.osm <- readRDS('cache.osm.RDS')
   } else {
     saveRDS(i.osm, 'cache.osm.RDS')
   }
