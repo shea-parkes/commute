@@ -74,7 +74,7 @@ CreateHeatMap <- function(src.list, kernel.bandwidth.miles) {#src.list <- i.comp
     ,duration.avg = numerator / denominator
     
     ## Compute the transparency `alpha` from the kernel weights above
-    ,alpha.cap = pmin(denominator, quantile(denominator, 0.95)) ## Home/Work areas will be over saturated, so cap them
+    ,alpha.cap = pmin(denominator, pmax(quantile(denominator, 0.95), 0.001)) ## Home/Work areas will be over saturated, so cap them
     ,alpha.scale = sqrt(alpha.cap / max(alpha.cap)) ## Encourage more to be seen than is truly given weight
     
     ## Transform the average duration to a nice (0,1) scale to map into colors
