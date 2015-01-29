@@ -30,7 +30,7 @@ GenerateComponents <- function(commute.src) {
     saveRDS(i.osm, 'cache.osm.RDS')
   }
   
-  n.tiles.wide <- 420L
+  n.tiles.wide <- 142L ## Limited by the amount of RAM that can be allocated
   tbl.tiles <- expand.grid(
     ## The sequence order needs to match with the population of the raster matrix below
     lat = seq(i.bbox['top'], i.bbox['bottom'], length.out = n.tiles.wide)
