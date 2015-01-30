@@ -23,12 +23,19 @@ GenerateComponents <- function(commute.src) {
   
   i.bbox <- make_bbox(long, lat, tbl.commute, f = 0.1)
   
-  try(i.osm <- get_openstreetmap(bbox = i.bbox, scale=1E5, messaging=TRUE))
-  if(!exists('i.osm')){ ## OSM web API will often deny queries under load, so cache some results
-    i.osm <- readRDS('cache.osm.RDS')
-  } else {
-    saveRDS(i.osm, 'cache.osm.RDS')
+  OSMCondHandler <- function(cond) {
+    print('Caught exception condition; loading cached map.')
+    return(readRDS('cache.osm.RDS'))
   }
+  
+  i.osm <- tryCatch({
+    i.osm <- get_openstreetmap(bbox = i.bbox, scale=1E5, messaging=TRUE)
+    saveRDS(i.osm, 'cache.osm.RDS')
+    i.osm
+  }
+  ,error = OSMCondHandler
+  ,warning = OSMCondHandler
+  )
   
   n.tiles.wide <- 142L ## Limited by the amount of RAM that can be allocated
   tbl.tiles <- expand.grid(
