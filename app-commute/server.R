@@ -78,7 +78,17 @@ shinyServer(function(input, output, session) {
     ,value = 5L
   )})
   
-  output$heatmap <- renderPlot(
+  output$heatmap <- renderPlot({
+    progress <- shiny::Progress$new()
+    on.exit(progress$close())
+    progress$set(message = "Generating Heat Map", value = 0)
+    
+    updateProgress <- function(detail = NULL, value.reduce.pct = 0.2) {
+      value.current <- progress$getValue()
+      value.new <- value.current + (progress$getMax() - value.current) * value.reduce.pct
+      progress$set(value = value.new, detail = detail)
+    }
+    
     CreateHeatMap(
       src.list = GetComponents()
       ,active.points = GetActive()
@@ -88,6 +98,7 @@ shinyServer(function(input, output, session) {
       ,alpha.transform.power = input$alpha.transform.power
       ,duration.winsor.percent = input$duration.winsor.percent
       ,path.trace.n.max = input$path.trace.n.max
+      ,updateProgress = updateProgress
     )
-  )
+  })
 })

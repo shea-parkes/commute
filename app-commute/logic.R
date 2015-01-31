@@ -93,6 +93,7 @@ CreateHeatMap <- function(
   ,alpha.transform.power = 0.5
   ,duration.winsor.percent = 0.01
   ,path.trace.n.max = 5L
+  ,updateProgress = NULL
   ) {
   #src.list <- i.components; active.points <- ApplyFilters(src.list)
   #kernel.bandwidth.miles <- 0.5; kernel.function.power <- 3
@@ -100,15 +101,18 @@ CreateHeatMap <- function(
   
   if(nrow(active.points) == 0) {return(src.list$base.ggmap)}
   
+  if(is.function(updateProgress)) updateProgress('Calculating distances')
   mtx.dist.kde <- nearest.dist(
     x=active.points %>% select(long, lat) %>% as.matrix() ## Observed
     ,y=src.list$tbl.tiles %>% select(lon, lat) %>% as.matrix() ## Measured
     ,method='greatcircle'
     ,delta = kernel.bandwidth.miles * (360/(3963.34*2*pi)) ##Converts from miles to necessary ~delta
   )
+  if(is.function(updateProgress)) updateProgress('Calculating weights')
   mtx.dist.kde@entries <- mtx.dist.kde@entries / (max(mtx.dist.kde@entries)*(1 + 1e-6))
   mtx.dist.kde@entries <- (1-mtx.dist.kde@entries^2)^kernel.function.power
   
+  if(is.function(updateProgress)) updateProgress('Calculating tile values')
   i.tiles <- src.list$tbl.tiles %>% mutate(
     
     ## Compute the average duration for each tile using the kernel weighting from above
@@ -136,6 +140,7 @@ CreateHeatMap <- function(
     )
   )
   
+  if(is.function(updateProgress)) updateProgress('Calculating tile colors')
   i.tiles$raster.color <- rgb(0,0,0,0)
   ind.empty <- is.na(i.tiles$duration.avg.scale) ## %T>% {mean(.) %>% print()}
   i.tiles$raster.color[!ind.empty] <- src.list$ColorRampFull(
@@ -145,6 +150,7 @@ CreateHeatMap <- function(
   raster.duration <- matrix(i.tiles$raster.color, nrow=sqrt(nrow(i.tiles)))
   
   if(n_distinct(active.points$date_direction) <= path.trace.n.max){
+    if(is.function(updateProgress)) updateProgress('Adding paths')
     plt.heatmap.base <- src.list$base.ggmap +
       geom_path(
         data=active.points
@@ -161,6 +167,7 @@ CreateHeatMap <- function(
     plt.heatmap.base <- src.list$base.ggmap
   }
   
+  if(is.function(updateProgress)) updateProgress('Compiling plot')
   plt.heatmap <- plt.heatmap.base + 
     inset_raster(
       raster.duration
