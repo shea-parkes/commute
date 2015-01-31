@@ -127,4 +127,15 @@ shinyServer(function(input, output, session) {
       ,updateProgress = updateProgress
     )
   })
+  
+  output$tbl.commute <- renderDataTable({
+    GetActive() %>%
+      select(
+        date.parse
+        ,time
+        ,duration
+        ,direction
+        ) %>%
+      distinct()
+  })
 })

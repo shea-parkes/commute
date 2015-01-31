@@ -62,8 +62,16 @@ fluidPage(
       )
     )
     ,mainPanel(
-      'Commuting Heatmap'
-      ,plotOutput('heatmap', height='600px')
+      tabsetPanel(
+        tabPanel(
+          'Heatmap'
+          ,plotOutput('heatmap', height='600px')
+          )
+        ,tabPanel(
+          'Data Table'
+          ,dataTableOutput('tbl.commute')
+        )
+      )
     )
   )
 )
