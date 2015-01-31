@@ -6,7 +6,9 @@ library(scales)
 library(RColorBrewer)
 library(spam)
 
-GenerateComponents <- function(commute.src) {
+GenerateComponents <- function(commute.src, updateProgress = NULL) {
+  
+  if(is.function(updateProgress)) updateProgress('Quering the database')
   tbl.commute <- tbl(commute.src, sql("
     SELECT src.*,ref.duration_min as duration
     FROM location as src
@@ -24,6 +26,7 @@ GenerateComponents <- function(commute.src) {
   
   i.bbox <- make_bbox(long, lat, tbl.commute, f = 0.1)
   
+  if(is.function(updateProgress)) updateProgress('Quering Open Street Maps (SLOW)')
   OSMCondHandler <- function(cond) {
     print('Caught exception condition; loading cached map.')
     return(readRDS('cache.osm.RDS'))
@@ -37,6 +40,8 @@ GenerateComponents <- function(commute.src) {
   ,error = OSMCondHandler
   ,warning = OSMCondHandler
   )
+  
+  if(is.function(updateProgress)) updateProgress('Pre-calculating mapping assets', value.reduce.pct = 0.8)
   
   base.ggmap <- ggmap(
     i.osm

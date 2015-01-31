@@ -1,12 +1,12 @@
 library(shiny)
 print('Initializing Shiny App')
 
+
 print('Loading logic file')
 source('logic.R')
 print('Finished loading logic file')
 
 print('Attempting to grab fresh database')
-#' Snag a fresh commute database if we can reach it
 dir.data <- paste0(Sys.getenv('UserProfile'),'/Google Drive/Skunkworks_OnePlus/') %T>% print()
 filepath.commute.db <- paste0(dir.data,'commute.sqlite') %>% print()
 if(file.exists(filepath.commute.db)) {file.copy(filepath.commute.db, getwd(), overwrite = TRUE)}
@@ -16,9 +16,25 @@ print('Moving into reactive state')
 shinyServer(function(input, output, session) {
   
   GetComponents <- reactive({
+    
     print('Generating base components')
+    progress <- shiny::Progress$new()
+    on.exit(progress$close())
+    progress$set(message = "Initializing Mapping Assets", value = 0)
+    
+    progress$set(detail = 'Connecting to database', value = 0.1)
     commute.src <- src_sqlite('commute.sqlite') %T>% print()
-    i.components <- GenerateComponents(commute.src)
+    
+    updateProgress <- function(detail = NULL, value.reduce.pct = 0.2) {
+      value.current <- progress$getValue()
+      value.new <- value.current + (progress$getMax() - value.current) * value.reduce.pct
+      progress$set(value = value.new, detail = detail)
+    }
+    
+    i.components <- GenerateComponents(
+      commute.src
+      ,updateProgress = updateProgress
+      )
     print('Finished generating base components')
     i.components
   })
