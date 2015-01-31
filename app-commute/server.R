@@ -21,8 +21,12 @@ print('Moving into reactive state')
 shinyServer(function(input, output, session) {
   output$heatmap <- renderPlot(
     CreateHeatMap(
-      i.components
-      ,input$kernel.bandwidth.miles
+      src.list = i.components
+      ,kernel.bandwidth.miles = input$kernel.bandwidth.miles
+      ,kernel.function.power = input$kernel.function.power
+      ,alpha.saturation.limit = input$alpha.saturation.limit
+      ,alpha.transform.power = input$alpha.transform.power
+      ,duration.winsor.percent = input$duration.winsor.percent
     )
   )
 })

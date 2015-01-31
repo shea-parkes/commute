@@ -62,7 +62,16 @@ GenerateComponents <- function(commute.src) {
   
 }
 
-CreateHeatMap <- function(src.list, kernel.bandwidth.miles) {#src.list <- i.components; kernel.bandwidth.miles <- 0.5
+CreateHeatMap <- function(
+  src.list
+  ,kernel.bandwidth.miles = 0.5
+  ,kernel.function.power = 3
+  ,alpha.saturation.limit = 0.95
+  ,alpha.transform.power = 0.5
+  ,duration.winsor.percent = 0.01
+  ) {
+  #src.list <- i.components; kernel.bandwidth.miles <- 0.5; kernel.function.power <- 3
+  #alpha.saturation.limit <- 0.95; alpha.transform.power <- 0.5; duration.winsor.percent <- 0.05
   
   mtx.dist.kde <- nearest.dist(
     x=src.list$tbl.commute %>% select(long, lat) %>% as.matrix() ## Observed
@@ -71,7 +80,7 @@ CreateHeatMap <- function(src.list, kernel.bandwidth.miles) {#src.list <- i.comp
     ,delta = kernel.bandwidth.miles * (360/(3963.34*2*pi)) ##Converts from miles to necessary ~delta
   )
   mtx.dist.kde@entries <- mtx.dist.kde@entries / (max(mtx.dist.kde@entries)*(1 + 1e-6))
-  mtx.dist.kde@entries <- (1-mtx.dist.kde@entries^2)^3
+  mtx.dist.kde@entries <- (1-mtx.dist.kde@entries^2)^kernel.function.power
   
   i.tiles <- src.list$tbl.tiles %>% mutate(
     
@@ -81,16 +90,16 @@ CreateHeatMap <- function(src.list, kernel.bandwidth.miles) {#src.list <- i.comp
     ,duration.avg = numerator / denominator
     
     ## Compute the transparency `alpha` from the kernel weights above
-    ,alpha.cap = pmin(denominator, pmax(quantile(denominator, 0.95), 0.001)) ## Home/Work areas will be over saturated, so cap them
-    ,alpha.scale = sqrt(alpha.cap / max(alpha.cap)) ## Encourage more to be seen than is truly given weight
+    ,alpha.cap = pmin(denominator, pmax(quantile(denominator, alpha.saturation.limit), 0.001)) ## Home/Work areas will be over saturated, so cap them
+    ,alpha.scale = (alpha.cap / max(alpha.cap))^alpha.transform.power ## Encourage more to be seen than is truly given weight
     
     ## Transform the average duration to a nice (0,1) scale to map into colors
     ,duration.avg.cap = pmax( ## Lightly cap for robustness properties
       pmin(
         duration.avg
-        ,quantile(duration.avg,0.99,na.rm = TRUE)
+        ,quantile(duration.avg, (1-duration.winsor.percent), na.rm = TRUE)
       )
-      ,quantile(duration.avg,0.01,na.rm = TRUE)
+      ,quantile(duration.avg, duration.winsor.percent, na.rm = TRUE)
     )
     ,duration.avg.scale = ifelse(
       is.na(duration.avg.cap)
