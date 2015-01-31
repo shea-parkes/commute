@@ -16,6 +16,7 @@ fluidPage(
             ,value = 1
             ,round = -1
           )
+          ,uiOutput('ui.direction')
         )
         ,tabPanel(
           'Advanced'

@@ -37,6 +37,11 @@ GenerateComponents <- function(commute.src) {
   ,warning = OSMCondHandler
   )
   
+  base.ggmap <- ggmap(
+    i.osm
+    ,darken = c(0.5, 'white')
+  )
+  
   n.tiles.wide <- 142L ## Limited by the amount of RAM that can be allocated
   tbl.tiles <- expand.grid(
     ## The sequence order needs to match with the population of the raster matrix below
@@ -56,25 +61,37 @@ GenerateComponents <- function(commute.src) {
     tbl.commute = tbl.commute
     ,i.bbox = i.bbox
     ,i.osm = i.osm
+    ,base.ggmap = base.ggmap
     ,tbl.tiles = tbl.tiles
     ,ColorRampFull = ColorRampFull
   ))
-  
+}
+
+ApplyFilters <- function(
+  src.list
+  ,active.directions = levels(src.list$tbl.commute$direction)
+) {
+  src.list$tbl.commute %>%
+    filter(direction %in% active.directions)
 }
 
 CreateHeatMap <- function(
   src.list
+  ,active.points
   ,kernel.bandwidth.miles = 0.5
   ,kernel.function.power = 3
   ,alpha.saturation.limit = 0.95
   ,alpha.transform.power = 0.5
   ,duration.winsor.percent = 0.01
   ) {
-  #src.list <- i.components; kernel.bandwidth.miles <- 0.5; kernel.function.power <- 3
+  #src.list <- i.components; active.points <- ApplyFilters(src.list)
+  #kernel.bandwidth.miles <- 0.5; kernel.function.power <- 3
   #alpha.saturation.limit <- 0.95; alpha.transform.power <- 0.5; duration.winsor.percent <- 0.05
   
+  if(nrow(active.points) == 0) {return(src.list$base.ggmap)}
+  
   mtx.dist.kde <- nearest.dist(
-    x=src.list$tbl.commute %>% select(long, lat) %>% as.matrix() ## Observed
+    x=active.points %>% select(long, lat) %>% as.matrix() ## Observed
     ,y=src.list$tbl.tiles %>% select(lon, lat) %>% as.matrix() ## Measured
     ,method='greatcircle'
     ,delta = kernel.bandwidth.miles * (360/(3963.34*2*pi)) ##Converts from miles to necessary ~delta
@@ -86,7 +103,7 @@ CreateHeatMap <- function(
     
     ## Compute the average duration for each tile using the kernel weighting from above
     denominator = colSums(mtx.dist.kde)
-    ,numerator = as.vector(t(mtx.dist.kde) %*% matrix(src.list$tbl.commute$duration, ncol = 1))
+    ,numerator = as.vector(t(mtx.dist.kde) %*% matrix(active.points$duration, ncol = 1))
     ,duration.avg = numerator / denominator
     
     ## Compute the transparency `alpha` from the kernel weights above
@@ -117,10 +134,7 @@ CreateHeatMap <- function(
   )
   raster.duration <- matrix(i.tiles$raster.color, nrow=sqrt(nrow(i.tiles)))
   
-  plt.heatmap <- ggmap(
-    src.list$i.osm
-    ,darken = c(0.5, 'white')
-  ) + 
+  plt.heatmap <- src.list$base.ggmap + 
     inset_raster(
       raster.duration
       ,xmin = src.list$i.bbox['left'], xmax = src.list$i.bbox['right']

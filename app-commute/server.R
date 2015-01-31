@@ -12,16 +12,35 @@ filepath.commute.db <- paste0(dir.data,'commute.sqlite') %>% print()
 if(file.exists(filepath.commute.db)) {file.copy(filepath.commute.db, getwd())}
 print('Finished attempting to grab fresh database')
 
-print('Generating base objects')
-commute.src <- src_sqlite('commute.sqlite') %T>% print()
-i.components <- GenerateComponents(commute.src) %T>% {str(.) %>% print()}
-print('Finished generating base objects')
-
 print('Moving into reactive state')
 shinyServer(function(input, output, session) {
+  
+  GetComponents <- reactive({
+    print('Generating base components')
+    commute.src <- src_sqlite('commute.sqlite') %T>% print()
+    i.components <- GenerateComponents(commute.src)
+    print('Finished generating base components')
+    i.components
+  })
+  
+  output$ui.direction <- renderUI({checkboxGroupInput(
+    'active.directions'
+    ,'Commuting Direction'
+    ,choices = GetComponents()$tbl.commute$direction %>% levels() %>% as.list()
+    ,selected = GetComponents()$tbl.commute$direction %>% levels()
+  )})
+  
+  GetActive <- reactive({
+    ApplyFilters(
+      GetComponents()
+      ,active.directions = input$active.directions
+    )
+  })
+  
   output$heatmap <- renderPlot(
     CreateHeatMap(
-      src.list = i.components
+      src.list = GetComponents()
+      ,active.points = GetActive()
       ,kernel.bandwidth.miles = input$kernel.bandwidth.miles
       ,kernel.function.power = input$kernel.function.power
       ,alpha.saturation.limit = input$alpha.saturation.limit
