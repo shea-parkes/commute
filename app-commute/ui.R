@@ -1,7 +1,7 @@
 library(shiny)
 
 fluidPage(
-  titlePanel('Milliman Carmel Commuters')
+  titlePanel('Carmel Commuters')
   ,sidebarLayout(
     sidebarPanel(
       tabsetPanel(
