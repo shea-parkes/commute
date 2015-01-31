@@ -39,12 +39,24 @@ shinyServer(function(input, output, session) {
     i.components
   })
   
-  output$ui.direction <- renderUI({checkboxGroupInput(
-    'active.directions'
-    ,'Commuting Direction'
-    ,choices = GetComponents()$tbl.commute$direction %>% levels() %>% as.list()
-    ,selected = GetComponents()$tbl.commute$direction %>% levels()
-  )})
+  output$ui.direction <- renderUI({
+    options.names <- GetComponents()$tbl.commute %>%
+      group_by(direction) %>%
+      summarize(
+        n.trips = n_distinct(date_direction)
+      ) %$%
+      setNames(
+        as.character(direction)
+        ,paste0(as.character(direction),' (',n.trips,' trips)')
+      )
+    
+    checkboxGroupInput(
+      'active.directions'
+      ,'Commuting Direction'
+      ,choices = options.names %>% as.list()
+      ,selected = options.names
+    )
+  })
   
   output$ui.dates <- renderUI({dateRangeInput(
     'active.date.range'
