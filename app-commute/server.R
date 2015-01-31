@@ -47,6 +47,21 @@ shinyServer(function(input, output, session) {
     )
   })
   
+  output$ui.n.paths <- renderUI({sliderInput(
+    'path.trace.n.max'
+    ,HTML(paste0(
+      'Max # of Paths to Trace'
+      ,'<br>'
+      ,'(<i>'
+      ,GetActive()$date_direction %>% n_distinct
+      ,' paths currently active</i>)'
+    ))
+    ,min = 0L
+    ,max = 25L
+    ,step = 1L
+    ,value = 5L
+  )})
+  
   output$heatmap <- renderPlot(
     CreateHeatMap(
       src.list = GetComponents()
@@ -56,6 +71,7 @@ shinyServer(function(input, output, session) {
       ,alpha.saturation.limit = input$alpha.saturation.limit
       ,alpha.transform.power = input$alpha.transform.power
       ,duration.winsor.percent = input$duration.winsor.percent
+      ,path.trace.n.max = input$path.trace.n.max
     )
   )
 })

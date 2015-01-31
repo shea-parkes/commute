@@ -87,6 +87,7 @@ CreateHeatMap <- function(
   ,alpha.saturation.limit = 0.95
   ,alpha.transform.power = 0.5
   ,duration.winsor.percent = 0.01
+  ,path.trace.n.max = 5L
   ) {
   #src.list <- i.components; active.points <- ApplyFilters(src.list)
   #kernel.bandwidth.miles <- 0.5; kernel.function.power <- 3
@@ -138,7 +139,7 @@ CreateHeatMap <- function(
   )
   raster.duration <- matrix(i.tiles$raster.color, nrow=sqrt(nrow(i.tiles)))
   
-  if(n_distinct(active.points$date_direction) <= 5L){
+  if(n_distinct(active.points$date_direction) <= path.trace.n.max){
     plt.heatmap.base <- src.list$base.ggmap +
       geom_path(
         data=active.points
