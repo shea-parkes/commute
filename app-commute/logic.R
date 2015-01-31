@@ -75,7 +75,8 @@ ApplyFilters <- function(
 ) {
   src.list$tbl.commute %>%
     filter(direction %in% active.directions) %>%
-    filter(between(date.parse, active.date.range[1], active.date.range[2]))
+    filter(between(date.parse, active.date.range[1], active.date.range[2])) %>%
+    arrange(date, time)
 }
 
 CreateHeatMap <- function(
@@ -137,7 +138,24 @@ CreateHeatMap <- function(
   )
   raster.duration <- matrix(i.tiles$raster.color, nrow=sqrt(nrow(i.tiles)))
   
-  plt.heatmap <- src.list$base.ggmap + 
+  if(n_distinct(active.points$date_direction) <= 5L){
+    plt.heatmap.base <- src.list$base.ggmap +
+      geom_path(
+        data=active.points
+        ,aes(
+          x=long
+          ,y=lat
+          ,group=date_direction
+          )
+        ,size=1
+        ,alpha=0.6
+        ,lty=2
+      )
+  } else {
+    plt.heatmap.base <- src.list$base.ggmap
+  }
+  
+  plt.heatmap <- plt.heatmap.base + 
     inset_raster(
       raster.duration
       ,xmin = src.list$i.bbox['left'], xmax = src.list$i.bbox['right']
