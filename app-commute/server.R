@@ -39,22 +39,36 @@ shinyServer(function(input, output, session) {
     i.components
   })
   
+  ui.direction.initialized <- FALSE ## Indicator that we're still in the initialization phase
   output$ui.direction <- renderUI({
-    options.names <- GetComponents()$tbl.commute %>%
+    
+    options.active.cnt <- GetActive() %>%
       group_by(direction) %>%
-      summarize(
-        n.trips = n_distinct(date_direction)
-      ) %$%
+      summarize(n.trips = n_distinct(date_direction))
+    
+    options.named <- GetComponents()$tbl.commute %>%
+      select(direction) %>%
+      distinct() %>%
+      left_join(options.active.cnt, by = 'direction') %>%
+      mutate(n.trips = ifelse(is.na(n.trips), 0, n.trips)) %>%
+      arrange(direction) %$%
       setNames(
         as.character(direction)
         ,paste0(as.character(direction),' (',n.trips,' trips)')
       )
     
+    if(ui.direction.initialized) {
+      options.selected <- input$active.directions
+    } else {
+      options.selected <- options.named
+      ui.direction.initialized <<- TRUE
+    }
+    
     checkboxGroupInput(
       'active.directions'
       ,'Commuting Direction'
-      ,choices = options.names %>% as.list()
-      ,selected = options.names
+      ,choices = options.named %>% as.list()
+      ,selected = options.selected
     )
   })
   
