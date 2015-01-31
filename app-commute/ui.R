@@ -17,6 +17,7 @@ fluidPage(
             ,round = -1
           )
           ,uiOutput('ui.direction')
+          ,uiOutput('ui.dates')
         )
         ,tabPanel(
           'Advanced'

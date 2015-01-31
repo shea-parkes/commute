@@ -17,9 +17,10 @@ GenerateComponents <- function(commute.src) {
     ")) %>%
     collect() %>%
     mutate(
-      direction = factor(ifelse(time>12, 'Evening', 'Morning'))
-      ,date_direction = factor(paste0(date, as.character(direction)))
-    )
+      date.parse = as.Date(date, '%m-%d-%Y')
+      ,direction = factor(ifelse(time>12, 'Evening', 'Morning'), levels=c('Morning', 'Evening'))
+      ,date_direction = factor(paste(date.parse, as.character(direction), sep='_'))
+    ) %T>% str()
   
   i.bbox <- make_bbox(long, lat, tbl.commute, f = 0.1)
   
@@ -70,9 +71,11 @@ GenerateComponents <- function(commute.src) {
 ApplyFilters <- function(
   src.list
   ,active.directions = levels(src.list$tbl.commute$direction)
+  ,active.date.range = range(src.list$tbl.commute$date.parse)
 ) {
   src.list$tbl.commute %>%
-    filter(direction %in% active.directions)
+    filter(direction %in% active.directions) %>%
+    filter(between(date.parse, active.date.range[1], active.date.range[2]))
 }
 
 CreateHeatMap <- function(

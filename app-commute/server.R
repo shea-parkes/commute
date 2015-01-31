@@ -30,10 +30,20 @@ shinyServer(function(input, output, session) {
     ,selected = GetComponents()$tbl.commute$direction %>% levels()
   )})
   
+  output$ui.dates <- renderUI({dateRangeInput(
+    'active.date.range'
+    ,'Commuting Dates'
+    ,start = GetComponents()$tbl.commute$date.parse %>% min()
+    ,end = GetComponents()$tbl.commute$date.parse %>% max()
+    ,min = GetComponents()$tbl.commute$date.parse %>% min()
+    ,max = GetComponents()$tbl.commute$date.parse %>% max()
+  )})
+  
   GetActive <- reactive({
     ApplyFilters(
       GetComponents()
       ,active.directions = input$active.directions
+      ,active.date.range = input$active.date.range
     )
   })
   
