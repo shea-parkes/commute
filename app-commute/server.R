@@ -9,7 +9,7 @@ print('Attempting to grab fresh database')
 #' Snag a fresh commute database if we can reach it
 dir.data <- paste0(Sys.getenv('UserProfile'),'/Google Drive/Skunkworks_OnePlus/') %T>% print()
 filepath.commute.db <- paste0(dir.data,'commute.sqlite') %>% print()
-if(file.exists(filepath.commute.db)) {file.copy(filepath.commute.db, getwd())}
+if(file.exists(filepath.commute.db)) {file.copy(filepath.commute.db, getwd(), overwrite = TRUE)}
 print('Finished attempting to grab fresh database')
 
 print('Moving into reactive state')
