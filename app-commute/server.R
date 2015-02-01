@@ -137,7 +137,7 @@ shinyServer(function(input, output, session) {
     )
   })
   
-  output$tbl.commute <- renderDataTable({
+  GetActiveTrips <- reactive({
     GetActive() %>%
       select(
         date.parse
@@ -153,8 +153,30 @@ shinyServer(function(input, output, session) {
       mutate(
         time_start_hours = round(time_start_hours, 2)
       ) %>%
-      distinct()
-  }
-  ,options = list(orderClasses = TRUE)
+      distinct() %>%
+      arrange(
+        desc(date)
+        ,desc(time_start_hours)
+      )
+  })
+  
+  output$tbl.commute <- renderDataTable(
+    GetActiveTrips()
+    ,options = list(orderClasses = TRUE)
+  )
+  
+  output$download.commute <- downloadHandler(
+    filename = function() {paste0(
+      'commute.trips.selected.'
+      ,format(Sys.time(), '%Y%m%d.%H%M%S')
+      ,'.csv'
+    )}
+    ,content = function(file) {
+      write.csv(
+        GetActiveTrips()
+        ,file
+        ,row.names = FALSE
+        )
+    }
   )
 })

@@ -22,6 +22,13 @@ fluidPage(
             )
             ,uiOutput('ui.n.paths')
           )
+          ,conditionalPanel(
+            condition = "input.tabs_main == 'triptable'"
+            ,downloadButton(
+              'download.commute'
+              ,'Download Trip Level Data'
+            )
+          )
         )
         ,tabPanel(
           'Advanced'
@@ -71,14 +78,14 @@ fluidPage(
       tabsetPanel(
         id = 'tabs_main'
         ,tabPanel(
-          'Heatmap'
+          'Geo Heatmap'
           ,plotOutput('heatmap', height='600px')
           ,value = 'heatmap'
         )
         ,tabPanel(
-          'Data Table'
+          'Trip Table'
           ,dataTableOutput('tbl.commute')
-          ,value = 'datatable'
+          ,value = 'triptable'
         )
       )
     )
