@@ -138,12 +138,15 @@ shinyServer(function(input, output, session) {
   })
   
   GetActiveTrips <- reactive({
+    long.mean <- GetComponents()$tbl.commute$long %>% mean()
+    
     GetActive() %>%
       select(
         date.parse
         ,direction
         ,time_start
         ,duration
+        ,long
       ) %>%
       rename(
         date = date.parse
@@ -152,8 +155,17 @@ shinyServer(function(input, output, session) {
       ) %>%
       mutate(
         time_start_hours = round(time_start_hours, 2)
+        ,long.deviance = abs(long - long.mean)
       ) %>%
-      distinct() %>%
+      group_by(
+        date
+        ,direction
+        ,time_start_hours
+        ,duration_minutes
+      ) %>%
+      summarize(
+        longitude_widest = long[which.max(long.deviance)]
+      ) %>%
       arrange(
         desc(date)
         ,desc(time_start_hours)
