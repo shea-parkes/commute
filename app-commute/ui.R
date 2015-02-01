@@ -9,6 +9,11 @@ fluidPage(
           'Basic'
           ,uiOutput('ui.dates')
           ,uiOutput('ui.direction')
+          ,HTML('<b>Departure Times (<i>in fractional military hours</i>)</b>')
+          ,plotOutput(
+            'histrug.departure_time'
+            ,height = '42px'
+            )
           ,uiOutput('ui.departure_time')
           ,conditionalPanel(
             condition = "input.tabs_main == 'heatmap'"

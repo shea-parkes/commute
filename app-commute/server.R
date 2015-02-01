@@ -81,20 +81,42 @@ shinyServer(function(input, output, session) {
     ,max = GetComponents()$tbl.commute$date.parse %>% max()
   )})
   
-  output$ui.departure_time <- renderUI({
-    time_start.range <- GetComponents()$tbl.commute$time_start %>%
+  
+  GetTimeRange <- reactive({
+    GetComponents()$tbl.commute$time_start %>%
       range() %>%
-      multiply_by(c(0.99,1.01)) %>%
-      {c(floor(.[1]*20)/20, ceiling(.[2]*20)/20)}
+      multiply_by(c(0.99,1.01)) %>% {
+        c(
+          floor(.[1]*20)/20
+          ,ceiling(.[2]*20)/20
+        )
+      }
+  })
+  
+  output$ui.departure_time <- renderUI({
+    time_start.range <- GetTimeRange()
     sliderInput(
       'active.departure.range'
-      ,HTML('Departure Times (<i>in fractional hours</i>)')
+      ,label = NULL
       ,min = time_start.range[1]
       ,max = time_start.range[2]
       ,value = time_start.range
       ,step = 0.05
       ,round = -2
     )
+  })
+  
+  output$histrug.departure_time <- renderPlot({
+    time_start.range <- GetTimeRange()
+    op <- par(mar = rep(0, 4))
+    hist(
+      GetActiveTrips()$time_start_hours
+      ,breaks = seq(time_start.range[1], time_start.range[2], length.out=142L)
+      ,main = NULL, xlab = NULL, ylab = NULL, axes = FALSE
+      ,col = 'skyblue'
+      ,lty = 0
+    )
+    par(op)
   })
   
   GetActive <- reactive({
@@ -205,7 +227,7 @@ shinyServer(function(input, output, session) {
         GetActiveTrips()
         ,file
         ,row.names = FALSE
-        )
+      )
     }
   )
 })
