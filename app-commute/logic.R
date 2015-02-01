@@ -36,6 +36,7 @@ GenerateComponents <- function(commute.src, updateProgress = NULL) {
   }
   
   i.osm <- tryCatch({
+    stop('Stop bothering OSM during development.')
     i.osm <- get_openstreetmap(bbox = i.bbox, scale=1E5, messaging=TRUE)
     saveRDS(i.osm, 'cache.osm.RDS')
     i.osm
