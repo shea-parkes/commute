@@ -34,7 +34,7 @@ shinyServer(function(input, output, session) {
     i.components <- GenerateComponents(
       commute.src
       ,updateProgress = updateProgress
-      )
+    )
     print('Finished generating base components')
     i.components
   })
@@ -104,7 +104,7 @@ shinyServer(function(input, output, session) {
       'Max # of Paths to Trace'
       ,'<br>'
       ,'(<i>'
-      ,GetActive()$date_direction %>% n_distinct
+      ,GetActive()$date_direction %>% n_distinct()
       ,' paths currently active</i>)'
     ))
     ,min = 0L
@@ -144,12 +144,12 @@ shinyServer(function(input, output, session) {
         ,direction
         ,time_start
         ,duration
-        ) %>%
+      ) %>%
       rename(
         date = date.parse
         ,time_start_hours = time_start
         ,duration_minutes = duration
-        ) %>%
+      ) %>%
       mutate(
         time_start_hours = round(time_start_hours, 2)
       ) %>%
