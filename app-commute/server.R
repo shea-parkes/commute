@@ -82,6 +82,15 @@ shinyServer(function(input, output, session) {
   )})
   
   GetActive <- reactive({
+    validate(need(
+      diff(input$active.date.range) >= 0
+      ,message=paste(
+        'Date range is backwards:'
+        ,input$active.date.range[1]
+        ,'to'
+        ,input$active.date.range[2]
+      )
+    ))
     ApplyFilters(
       GetComponents()
       ,active.directions = input$active.directions
