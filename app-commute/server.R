@@ -132,10 +132,20 @@ shinyServer(function(input, output, session) {
     GetActive() %>%
       select(
         date.parse
-        ,time
-        ,duration
         ,direction
+        ,time_start
+        ,duration
         ) %>%
+      rename(
+        date = date.parse
+        ,time_start_hours = time_start
+        ,duration_minutes = duration
+        ) %>%
+      mutate(
+        time_start_hours = round(time_start_hours, 2)
+      ) %>%
       distinct()
-  })
+  }
+  ,options = list(orderClasses = TRUE)
+  )
 })

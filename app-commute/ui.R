@@ -7,6 +7,8 @@ fluidPage(
       tabsetPanel(
         tabPanel(
           'Basic'
+          ,uiOutput('ui.dates')
+          ,uiOutput('ui.direction')
           ,sliderInput(
             'kernel.bandwidth.miles'
             ,HTML('Kernel Bandwidth<br>(<i>in miles</i>)')
@@ -16,8 +18,6 @@ fluidPage(
             ,value = 1
             ,round = -1
           )
-          ,uiOutput('ui.direction')
-          ,uiOutput('ui.dates')
           ,uiOutput('ui.n.paths')
         )
         ,tabPanel(

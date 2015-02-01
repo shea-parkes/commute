@@ -10,7 +10,10 @@ GenerateComponents <- function(commute.src, updateProgress = NULL) {
   
   if(is.function(updateProgress)) updateProgress('Quering the database')
   tbl.commute <- tbl(commute.src, sql("
-    SELECT src.*,ref.duration_min as duration
+    SELECT
+      src.*
+      ,ref.duration_min as duration
+      ,(ref.time - ref.duration_min/60) as time_start
     FROM location as src
     INNER JOIN commute as ref on
     src.date = ref.date
