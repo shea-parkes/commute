@@ -81,6 +81,22 @@ shinyServer(function(input, output, session) {
     ,max = GetComponents()$tbl.commute$date.parse %>% max()
   )})
   
+  output$ui.departure_time <- renderUI({
+    time_start.range <- GetComponents()$tbl.commute$time_start %>%
+      range() %>%
+      multiply_by(c(0.99,1.01)) %>%
+      {c(floor(.[1]*20)/20, ceiling(.[2]*20)/20)}
+    sliderInput(
+      'active.departure.range'
+      ,HTML('Departure Times (<i>in fractional hours</i>)')
+      ,min = time_start.range[1]
+      ,max = time_start.range[2]
+      ,value = time_start.range
+      ,step = 0.05
+      ,round = -2
+    )
+  })
+  
   GetActive <- reactive({
     validate(need(
       diff(input$active.date.range) >= 0
@@ -95,6 +111,7 @@ shinyServer(function(input, output, session) {
       GetComponents()
       ,active.directions = input$active.directions
       ,active.date.range = input$active.date.range
+      ,active.departure.range = input$active.departure.range
     )
   })
   

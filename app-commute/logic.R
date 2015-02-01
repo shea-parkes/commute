@@ -81,10 +81,12 @@ ApplyFilters <- function(
   src.list
   ,active.directions = levels(src.list$tbl.commute$direction)
   ,active.date.range = range(src.list$tbl.commute$date.parse)
+  ,active.departure.range = range(src.list$tbl.commute$time_start)
 ) {
   src.list$tbl.commute %>%
     filter(direction %in% active.directions) %>%
     filter(between(date.parse, active.date.range[1], active.date.range[2])) %>%
+    filter(between(time_start, active.departure.range[1], active.departure.range[2])) %>%
     arrange(date, time)
 }
 

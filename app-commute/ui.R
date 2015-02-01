@@ -9,11 +9,12 @@ fluidPage(
           'Basic'
           ,uiOutput('ui.dates')
           ,uiOutput('ui.direction')
+          ,uiOutput('ui.departure_time')
           ,conditionalPanel(
             condition = "input.tabs_main == 'heatmap'"
             ,sliderInput(
               'kernel.bandwidth.miles'
-              ,HTML('Kernel Bandwidth<br>(<i>in miles</i>)')
+              ,HTML('Kernel Bandwidth (<i>in miles</i>)')
               ,min = 0.1
               ,max = 5
               ,step = 0.1
