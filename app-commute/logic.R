@@ -101,7 +101,7 @@ CreateHeatMap <- function(
   ,duration_winsor_percent = 0.01
   ,path.trace.n.max = 5L
   ,updateProgress = NULL
-  ) {
+) {
   #src.list <- i.components; active.points <- ApplyFilters(src.list)
   #kernel_bandwidth_miles <- 0.5; kernel_function_power <- 3
   #alpha_saturation_limit <- 0.95; alpha_transform_power <- 0.5; duration_winsor_percent <- 0.05
@@ -165,7 +165,7 @@ CreateHeatMap <- function(
           x=long
           ,y=lat
           ,group=date_direction
-          )
+        )
         ,size=1
         ,alpha=0.6
         ,lty=2

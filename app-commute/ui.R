@@ -13,7 +13,7 @@ fluidPage(
           ,plotOutput(
             'hist_departure_time'
             ,height = '42px'
-            )
+          )
           ,uiOutput('ui_time_departure')
           ,conditionalPanel(
             condition = "input.tabs_main == 'heatmap'"
