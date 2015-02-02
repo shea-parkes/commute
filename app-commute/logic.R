@@ -6,10 +6,10 @@ library(scales)
 library(RColorBrewer)
 library(spam)
 
-GenerateComponents <- function(commute.src, updateProgress = NULL) {
+GenerateComponents <- function(src.commute, updateProgress = NULL) {
   
   if(is.function(updateProgress)) updateProgress('Quering the database')
-  tbl.commute <- tbl(commute.src, sql("
+  tbl.points <- tbl(src.commute, sql("
     SELECT
       src.*
       ,ref.duration_min as duration
@@ -27,7 +27,7 @@ GenerateComponents <- function(commute.src, updateProgress = NULL) {
       ,date_direction = factor(paste(date.parse, as.character(direction), sep='_'))
     ) %T>% str()
   
-  i.bbox <- make_bbox(long, lat, tbl.commute, f = 0.1)
+  i.bbox <- make_bbox(long, lat, tbl.points, f = 0.1)
   
   if(is.function(updateProgress)) updateProgress('Quering Open Street Maps (SLOW)')
   OSMCondHandler <- function(cond) {
@@ -54,40 +54,41 @@ GenerateComponents <- function(commute.src, updateProgress = NULL) {
   
   n.tiles.wide <- 142L ## Limited by the amount of RAM that can be allocated
   tbl.tiles <- expand.grid(
-    ## The sequence order needs to match with the population of the raster matrix below
+    ## The sequence order needs to match with the population of the raster matrix later
     lat = seq(i.bbox['top'], i.bbox['bottom'], length.out = n.tiles.wide)
     ,lon = seq(i.bbox['left'], i.bbox['right'], length.out = n.tiles.wide)
   ) %>%
     as.tbl()
   
-  
-  ColorRampSimple <- colorRamp(rev(brewer.pal(11, 'RdYlBu'))) ## Traverse Red<>Yellow<>Blue
-  ColorRampFull <- function(i.color.norm, i.alpha.norm=1, i.ramp.func = ColorRampSimple) {
-    i.color.ramp <- i.ramp.func(i.color.norm)
-    rgb(i.color.ramp[,1], i.color.ramp[,2], i.color.ramp[,3], i.alpha.norm*255, maxColorValue = 255L)
-  }
-  
   return(list(
-    tbl.commute = tbl.commute
+    tbl.points = tbl.points
     ,i.bbox = i.bbox
     ,i.osm = i.osm
     ,base.ggmap = base.ggmap
     ,tbl.tiles = tbl.tiles
-    ,ColorRampFull = ColorRampFull
   ))
 }
 
 ApplyFilters <- function(
   src.list
-  ,active_directions = levels(src.list$tbl.commute$direction)
-  ,active_date_range = range(src.list$tbl.commute$date.parse)
-  ,active_departure_range = range(src.list$tbl.commute$time_start)
+  ,active_directions = levels(src.list$tbl.points$direction)
+  ,active_date_range = range(src.list$tbl.points$date.parse)
+  ,active_departure_range = range(src.list$tbl.points$time_start)
 ) {
-  src.list$tbl.commute %>%
+  src.list$tbl.points %>%
     filter(direction %in% active_directions) %>%
     filter(between(date.parse, active_date_range[1], active_date_range[2])) %>%
     filter(between(time_start, active_departure_range[1], active_departure_range[2])) %>%
     arrange(date, time)
+}
+
+ColorRamp_DynamicAlpha <- function(
+  i.color.norm
+  ,i.alpha.norm = 1
+  ,i.ramp.func = brewer.pal(11, 'RdYlBu') %>% rev() %>% colorRamp()
+) {
+  i.color.ramp <- i.ramp.func(i.color.norm)
+  rgb(i.color.ramp[,1], i.color.ramp[,2], i.color.ramp[,3], i.alpha.norm*255, maxColorValue = 255L)
 }
 
 CreateHeatMap <- function(
@@ -149,7 +150,7 @@ CreateHeatMap <- function(
   if(is.function(updateProgress)) updateProgress('Calculating tile colors')
   i.tiles$raster.color <- rgb(0,0,0,0)
   ind.empty <- is.na(i.tiles$duration.avg.scale) ## %T>% {mean(.) %>% print()}
-  i.tiles$raster.color[!ind.empty] <- src.list$ColorRampFull(
+  i.tiles$raster.color[!ind.empty] <- ColorRamp_DynamicAlpha(
     i.tiles$duration.avg.scale[!ind.empty]
     ,i.tiles$alpha.scale[!ind.empty]
   )
@@ -184,7 +185,7 @@ CreateHeatMap <- function(
       'Commute Time\n(Minutes)'
       ,guide = "colorbar"
       ,limits = range(i.tiles$duration.avg.cap[!ind.empty])
-      ,colours=src.list$ColorRampFull(seq(0,1,by=0.05))
+      ,colours = ColorRamp_DynamicAlpha(seq(0,1,by=0.05))
     )
   
   return(plt.heatmap)

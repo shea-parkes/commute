@@ -23,7 +23,7 @@ shinyServer(function(input, output, session) {
     progress$set(message = "Initializing Mapping Assets", value = 0)
     
     progress$set(detail = 'Connecting to database', value = 0.1)
-    commute.src <- src_sqlite('commute.sqlite') %T>% print()
+    src.commute <- src_sqlite('commute.sqlite') %T>% print()
     
     updateProgress <- function(detail = NULL, value.reduce.pct = 0.2) {
       value.current <- progress$getValue()
@@ -32,7 +32,7 @@ shinyServer(function(input, output, session) {
     }
     
     i.components <- GenerateComponents(
-      commute.src
+      src.commute
       ,updateProgress = updateProgress
     )
     print('Finished generating base components')
@@ -46,7 +46,7 @@ shinyServer(function(input, output, session) {
       group_by(direction) %>%
       summarize(n.trips = n_distinct(date_direction))
     
-    options.named <- GetComponents()$tbl.commute %>%
+    options.named <- GetComponents()$tbl.points %>%
       select(direction) %>%
       distinct() %>%
       left_join(options.active.cnt, by = 'direction') %>%
@@ -75,15 +75,15 @@ shinyServer(function(input, output, session) {
   output$ui_dates <- renderUI({dateRangeInput(
     'active_date_range'
     ,'Commuting Dates'
-    ,start = GetComponents()$tbl.commute$date.parse %>% min()
-    ,end = GetComponents()$tbl.commute$date.parse %>% max()
-    ,min = GetComponents()$tbl.commute$date.parse %>% min()
-    ,max = GetComponents()$tbl.commute$date.parse %>% max()
+    ,start = GetComponents()$tbl.points$date.parse %>% min()
+    ,end = GetComponents()$tbl.points$date.parse %>% max()
+    ,min = GetComponents()$tbl.points$date.parse %>% min()
+    ,max = GetComponents()$tbl.points$date.parse %>% max()
   )})
   
   
   GetTimeRange <- reactive({
-    GetComponents()$tbl.commute$time_start %>%
+    GetComponents()$tbl.points$time_start %>%
       range() %>%
       multiply_by(c(0.99,1.01)) %>% {
         c(
@@ -177,7 +177,7 @@ shinyServer(function(input, output, session) {
   })
   
   GetActiveTrips <- reactive({
-    long.mean <- GetComponents()$tbl.commute$long %>% mean()
+    long.mean <- GetComponents()$tbl.points$long %>% mean()
     
     GetActive() %>%
       select(
