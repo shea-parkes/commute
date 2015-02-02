@@ -7,18 +7,18 @@ fluidPage(
       tabsetPanel(
         tabPanel(
           'Basic'
-          ,uiOutput('ui.dates')
-          ,uiOutput('ui.direction')
+          ,uiOutput('ui_dates')
+          ,uiOutput('ui_direction')
           ,HTML('<b>Departure Times (<i>in fractional military hours</i>)</b>')
           ,plotOutput(
-            'histrug.departure_time'
+            'hist_departure_time'
             ,height = '42px'
             )
-          ,uiOutput('ui.departure_time')
+          ,uiOutput('ui_time_departure')
           ,conditionalPanel(
             condition = "input.tabs_main == 'heatmap'"
             ,sliderInput(
-              'kernel.bandwidth.miles'
+              'kernel_bandwidth_miles'
               ,HTML('Kernel Bandwidth (<i>in miles</i>)')
               ,min = 0.1
               ,max = 5
@@ -26,12 +26,12 @@ fluidPage(
               ,value = 1
               ,round = -1
             )
-            ,uiOutput('ui.n.paths')
+            ,uiOutput('ui_n_paths_max')
           )
           ,conditionalPanel(
             condition = "input.tabs_main == 'triptable'"
             ,downloadButton(
-              'download.commute'
+              'download_trips'
               ,'Download Trip Level Data'
             )
           )
@@ -41,7 +41,7 @@ fluidPage(
           ,conditionalPanel(
             condition = "input.tabs_main == 'heatmap'"
             ,sliderInput(
-              'kernel.function.power'
+              'kernel_function_power'
               ,HTML('Kernel Power Function<br>(<i>1=Epanechnikov, 2=Quartic, 3=Triweight</i>)')
               ,min = 1
               ,max = 3
@@ -50,7 +50,7 @@ fluidPage(
               ,round = -1
             )
             ,sliderInput(
-              'alpha.saturation.limit'
+              'alpha_saturation_limit'
               ,HTML('Transparency Saturation Limit<br>(<i>1 = No Capping</i>)')
               ,min = 0.75
               ,max = 1
@@ -59,7 +59,7 @@ fluidPage(
               ,round = -2
             )
             ,sliderInput(
-              'alpha.transform.power'
+              'alpha_transform_power'
               ,HTML('Transparency Dampening Power<br>(<i>1 = No Dampening</i>)')
               ,min = 0.2
               ,max = 1
@@ -68,7 +68,7 @@ fluidPage(
               ,round = -1
             )
             ,sliderInput(
-              'duration.winsor.percent'
+              'duration_winsor_percent'
               ,HTML('Duration Winsoring Percent<br>(<i>0 = No Winsoring</i>)')
               ,min = 0
               ,max = 0.1
@@ -90,7 +90,7 @@ fluidPage(
         )
         ,tabPanel(
           'Trip Table'
-          ,dataTableOutput('tbl.commute')
+          ,dataTableOutput('tbl_trips')
           ,value = 'triptable'
         )
       )

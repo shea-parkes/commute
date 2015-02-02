@@ -39,8 +39,8 @@ shinyServer(function(input, output, session) {
     i.components
   })
   
-  ui.direction.initialized <- FALSE ## Indicator that we're still in the initialization phase
-  output$ui.direction <- renderUI({
+  ui_direction.initialized <- FALSE ## Indicator that we're still in the initialization phase
+  output$ui_direction <- renderUI({
     
     options.active.cnt <- GetActive() %>%
       group_by(direction) %>%
@@ -57,23 +57,23 @@ shinyServer(function(input, output, session) {
         ,paste0(as.character(direction),' (',n.trips,' trips)')
       )
     
-    if(ui.direction.initialized) {
-      options.selected <- input$active.directions
+    if(ui_direction.initialized) {
+      options.selected <- input$active_directions
     } else {
       options.selected <- options.named
-      ui.direction.initialized <<- TRUE
+      ui_direction.initialized <<- TRUE
     }
     
     checkboxGroupInput(
-      'active.directions'
+      'active_directions'
       ,'Commuting Direction'
       ,choices = options.named %>% as.list()
       ,selected = options.selected
     )
   })
   
-  output$ui.dates <- renderUI({dateRangeInput(
-    'active.date.range'
+  output$ui_dates <- renderUI({dateRangeInput(
+    'active_date_range'
     ,'Commuting Dates'
     ,start = GetComponents()$tbl.commute$date.parse %>% min()
     ,end = GetComponents()$tbl.commute$date.parse %>% max()
@@ -93,10 +93,10 @@ shinyServer(function(input, output, session) {
       }
   })
   
-  output$ui.departure_time <- renderUI({
+  output$ui_time_departure <- renderUI({
     time_start.range <- GetTimeRange()
     sliderInput(
-      'active.departure.range'
+      'active_departure_range'
       ,label = NULL
       ,min = time_start.range[1]
       ,max = time_start.range[2]
@@ -106,7 +106,7 @@ shinyServer(function(input, output, session) {
     )
   })
   
-  output$histrug.departure_time <- renderPlot({
+  output$hist_departure_time <- renderPlot({
     time_start.range <- GetTimeRange()
     op <- par(mar = rep(0, 4))
     hist(
@@ -121,23 +121,23 @@ shinyServer(function(input, output, session) {
   
   GetActive <- reactive({
     validate(need(
-      diff(input$active.date.range) >= 0
+      diff(input$active_date_range) >= 0
       ,message=paste(
         'Date range is backwards:'
-        ,input$active.date.range[1]
+        ,input$active_date_range[1]
         ,'to'
-        ,input$active.date.range[2]
+        ,input$active_date_range[2]
       )
     ))
     ApplyFilters(
       GetComponents()
-      ,active.directions = input$active.directions
-      ,active.date.range = input$active.date.range
-      ,active.departure.range = input$active.departure.range
+      ,active_directions = input$active_directions
+      ,active_date_range = input$active_date_range
+      ,active_departure_range = input$active_departure_range
     )
   })
   
-  output$ui.n.paths <- renderUI({sliderInput(
+  output$ui_n_paths_max <- renderUI({sliderInput(
     'path.trace.n.max'
     ,HTML(paste0(
       'Max # of Paths to Trace'
@@ -166,11 +166,11 @@ shinyServer(function(input, output, session) {
     CreateHeatMap(
       src.list = GetComponents()
       ,active.points = GetActive()
-      ,kernel.bandwidth.miles = input$kernel.bandwidth.miles
-      ,kernel.function.power = input$kernel.function.power
-      ,alpha.saturation.limit = input$alpha.saturation.limit
-      ,alpha.transform.power = input$alpha.transform.power
-      ,duration.winsor.percent = input$duration.winsor.percent
+      ,kernel_bandwidth_miles = input$kernel_bandwidth_miles
+      ,kernel_function_power = input$kernel_function_power
+      ,alpha_saturation_limit = input$alpha_saturation_limit
+      ,alpha_transform_power = input$alpha_transform_power
+      ,duration_winsor_percent = input$duration_winsor_percent
       ,path.trace.n.max = input$path.trace.n.max
       ,updateProgress = updateProgress
     )
@@ -211,12 +211,12 @@ shinyServer(function(input, output, session) {
       )
   })
   
-  output$tbl.commute <- renderDataTable(
+  output$tbl_trips <- renderDataTable(
     GetActiveTrips()
     ,options = list(orderClasses = TRUE)
   )
   
-  output$download.commute <- downloadHandler(
+  output$download_trips <- downloadHandler(
     filename = function() {paste0(
       'commute.trips.selected.'
       ,format(Sys.time(), '%Y%m%d.%H%M%S')

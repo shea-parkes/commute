@@ -79,31 +79,31 @@ GenerateComponents <- function(commute.src, updateProgress = NULL) {
 
 ApplyFilters <- function(
   src.list
-  ,active.directions = levels(src.list$tbl.commute$direction)
-  ,active.date.range = range(src.list$tbl.commute$date.parse)
-  ,active.departure.range = range(src.list$tbl.commute$time_start)
+  ,active_directions = levels(src.list$tbl.commute$direction)
+  ,active_date_range = range(src.list$tbl.commute$date.parse)
+  ,active_departure_range = range(src.list$tbl.commute$time_start)
 ) {
   src.list$tbl.commute %>%
-    filter(direction %in% active.directions) %>%
-    filter(between(date.parse, active.date.range[1], active.date.range[2])) %>%
-    filter(between(time_start, active.departure.range[1], active.departure.range[2])) %>%
+    filter(direction %in% active_directions) %>%
+    filter(between(date.parse, active_date_range[1], active_date_range[2])) %>%
+    filter(between(time_start, active_departure_range[1], active_departure_range[2])) %>%
     arrange(date, time)
 }
 
 CreateHeatMap <- function(
   src.list
   ,active.points
-  ,kernel.bandwidth.miles = 0.5
-  ,kernel.function.power = 3
-  ,alpha.saturation.limit = 0.95
-  ,alpha.transform.power = 0.5
-  ,duration.winsor.percent = 0.01
+  ,kernel_bandwidth_miles = 0.5
+  ,kernel_function_power = 3
+  ,alpha_saturation_limit = 0.95
+  ,alpha_transform_power = 0.5
+  ,duration_winsor_percent = 0.01
   ,path.trace.n.max = 5L
   ,updateProgress = NULL
   ) {
   #src.list <- i.components; active.points <- ApplyFilters(src.list)
-  #kernel.bandwidth.miles <- 0.5; kernel.function.power <- 3
-  #alpha.saturation.limit <- 0.95; alpha.transform.power <- 0.5; duration.winsor.percent <- 0.05
+  #kernel_bandwidth_miles <- 0.5; kernel_function_power <- 3
+  #alpha_saturation_limit <- 0.95; alpha_transform_power <- 0.5; duration_winsor_percent <- 0.05
   
   if(nrow(active.points) == 0) {return(src.list$base.ggmap)}
   
@@ -112,11 +112,11 @@ CreateHeatMap <- function(
     x=active.points %>% select(long, lat) %>% as.matrix() ## Observed
     ,y=src.list$tbl.tiles %>% select(lon, lat) %>% as.matrix() ## Measured
     ,method='greatcircle'
-    ,delta = kernel.bandwidth.miles * (360/(3963.34*2*pi)) ##Converts from miles to necessary ~delta
+    ,delta = kernel_bandwidth_miles * (360/(3963.34*2*pi)) ##Converts from miles to necessary ~delta
   )
   if(is.function(updateProgress)) updateProgress('Calculating weights')
   mtx.dist.kde@entries <- mtx.dist.kde@entries / (max(mtx.dist.kde@entries)*(1 + 1e-6))
-  mtx.dist.kde@entries <- (1-mtx.dist.kde@entries^2)^kernel.function.power
+  mtx.dist.kde@entries <- (1-mtx.dist.kde@entries^2)^kernel_function_power
   
   if(is.function(updateProgress)) updateProgress('Calculating tile values')
   i.tiles <- src.list$tbl.tiles %>% mutate(
@@ -127,16 +127,16 @@ CreateHeatMap <- function(
     ,duration.avg = numerator / denominator
     
     ## Compute the transparency `alpha` from the kernel weights above
-    ,alpha.cap = pmin(denominator, pmax(quantile(denominator, alpha.saturation.limit), 0.001)) ## Home/Work areas will be over saturated, so cap them
-    ,alpha.scale = (alpha.cap / max(alpha.cap))^alpha.transform.power ## Encourage more to be seen than is truly given weight
+    ,alpha.cap = pmin(denominator, pmax(quantile(denominator, alpha_saturation_limit), 0.001)) ## Home/Work areas will be over saturated, so cap them
+    ,alpha.scale = (alpha.cap / max(alpha.cap))^alpha_transform_power ## Encourage more to be seen than is truly given weight
     
     ## Transform the average duration to a nice (0,1) scale to map into colors
     ,duration.avg.cap = pmax( ## Lightly cap for robustness properties
       pmin(
         duration.avg
-        ,quantile(duration.avg, (1-duration.winsor.percent), na.rm = TRUE)
+        ,quantile(duration.avg, (1-duration_winsor_percent), na.rm = TRUE)
       )
-      ,quantile(duration.avg, duration.winsor.percent, na.rm = TRUE)
+      ,quantile(duration.avg, duration_winsor_percent, na.rm = TRUE)
     )
     ,duration.avg.scale = ifelse(
       is.na(duration.avg.cap)
