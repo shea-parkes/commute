@@ -75,6 +75,16 @@ ApplyFilters <- function(
   ,active_date_range = range(i.tbl$date.parse)
   ,active_departure_range = range(i.tbl$time_start)
 ) {
+  validate(need(
+    diff(active_date_range) >= 0
+    ,message=paste(
+      'Date range is backwards:'
+      ,active_date_range[1]
+      ,'to'
+      ,active_date_range[2]
+    )
+  ))
+  
   i.tbl %>%
     filter(direction %in% active_directions) %>%
     filter(between(date.parse, active_date_range[1], active_date_range[2])) %>%

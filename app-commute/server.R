@@ -42,7 +42,7 @@ shinyServer(function(input, output, session) {
   ui_direction.initialized <- FALSE ## Indicator that we're still in the initialization phase
   output$ui_direction <- renderUI({
     
-    options.active.cnt <- GetActive() %>%
+    options.active.cnt <- GetActivePoints() %>%
       group_by(direction) %>%
       summarize(n.trips = n_distinct(date_direction))
     
@@ -119,16 +119,7 @@ shinyServer(function(input, output, session) {
     par(op)
   })
   
-  GetActive <- reactive({
-    validate(need(
-      diff(input$active_date_range) >= 0
-      ,message=paste(
-        'Date range is backwards:'
-        ,input$active_date_range[1]
-        ,'to'
-        ,input$active_date_range[2]
-      )
-    ))
+  GetActivePoints <- reactive({
     ApplyFilters(
       GetComponents()$tbl.points
       ,active_directions = input$active_directions
@@ -143,7 +134,7 @@ shinyServer(function(input, output, session) {
       'Max # of Paths to Trace'
       ,'<br>'
       ,'(<i>'
-      ,GetActive()$date_direction %>% n_distinct()
+      ,GetActivePoints()$date_direction %>% n_distinct()
       ,' paths currently active</i>)'
     ))
     ,min = 0L
@@ -165,7 +156,7 @@ shinyServer(function(input, output, session) {
     
     CreateHeatMap(
       src.list = GetComponents()
-      ,active.points = GetActive()
+      ,active.points = GetActivePoints()
       ,kernel_bandwidth_miles = input$kernel_bandwidth_miles
       ,kernel_function_power = input$kernel_function_power
       ,alpha_saturation_limit = input$alpha_saturation_limit
@@ -179,7 +170,7 @@ shinyServer(function(input, output, session) {
   GetActiveTrips <- reactive({
     long.mean <- GetComponents()$tbl.points$long %>% mean()
     
-    GetActive() %>%
+    GetActivePoints() %>%
       select(
         date.parse
         ,direction
