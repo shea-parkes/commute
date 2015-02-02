@@ -31,7 +31,7 @@ shinyServer(function(input, output, session) {
       progress$set(value = value.new, detail = detail)
     }
     
-    i.components <- GenerateComponents(
+    i.components <- MungeCommuteDB(
       src.commute
       ,updateProgress = updateProgress
     )
@@ -130,7 +130,7 @@ shinyServer(function(input, output, session) {
       )
     ))
     ApplyFilters(
-      GetComponents()
+      GetComponents()$tbl.points
       ,active_directions = input$active_directions
       ,active_date_range = input$active_date_range
       ,active_departure_range = input$active_departure_range

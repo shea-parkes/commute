@@ -6,7 +6,7 @@ library(scales)
 library(RColorBrewer)
 library(spam)
 
-GenerateComponents <- function(src.commute, updateProgress = NULL) {
+MungeCommuteDB <- function(src.commute, updateProgress = NULL) {
   
   if(is.function(updateProgress)) updateProgress('Quering the database')
   tbl.points <- tbl(src.commute, sql("
@@ -47,7 +47,7 @@ GenerateComponents <- function(src.commute, updateProgress = NULL) {
   
   if(is.function(updateProgress)) updateProgress('Pre-calculating mapping assets', value.reduce.pct = 0.8)
   
-  base.ggmap <- ggmap(
+  ggmap.base <- ggmap(
     i.osm
     ,darken = c(0.5, 'white')
   )
@@ -64,22 +64,24 @@ GenerateComponents <- function(src.commute, updateProgress = NULL) {
     tbl.points = tbl.points
     ,i.bbox = i.bbox
     ,i.osm = i.osm
-    ,base.ggmap = base.ggmap
+    ,ggmap.base = ggmap.base
     ,tbl.tiles = tbl.tiles
   ))
 }
 
 ApplyFilters <- function(
-  src.list
-  ,active_directions = levels(src.list$tbl.points$direction)
-  ,active_date_range = range(src.list$tbl.points$date.parse)
-  ,active_departure_range = range(src.list$tbl.points$time_start)
+  i.tbl
+  ,active_directions = levels(i.tbl$direction)
+  ,active_date_range = range(i.tbl$date.parse)
+  ,active_departure_range = range(i.tbl$time_start)
 ) {
-  src.list$tbl.points %>%
+  i.tbl %>%
     filter(direction %in% active_directions) %>%
     filter(between(date.parse, active_date_range[1], active_date_range[2])) %>%
-    filter(between(time_start, active_departure_range[1], active_departure_range[2])) %>%
-    arrange(date, time)
+    filter(between(time_start, active_departure_range[1], active_departure_range[2])) %>% {
+      if('time' %in% names(.)) {arrange(., date, time)
+      } else {arrange(., desc(date), desc(time_start))}
+    }
 }
 
 ColorRamp_DynamicAlpha <- function(
@@ -102,11 +104,11 @@ CreateHeatMap <- function(
   ,path.trace.n.max = 5L
   ,updateProgress = NULL
 ) {
-  #src.list <- i.components; active.points <- ApplyFilters(src.list)
+  #src.list <- i.components; active.points <- ApplyFilters(src.list$tbl.points)
   #kernel_bandwidth_miles <- 0.5; kernel_function_power <- 3
   #alpha_saturation_limit <- 0.95; alpha_transform_power <- 0.5; duration_winsor_percent <- 0.05
   
-  if(nrow(active.points) == 0) {return(src.list$base.ggmap)}
+  if(nrow(active.points) == 0) {return(src.list$ggmap.base)}
   
   if(is.function(updateProgress)) updateProgress('Calculating distances')
   mtx.dist.kde <- nearest.dist(
@@ -158,7 +160,7 @@ CreateHeatMap <- function(
   
   if(n_distinct(active.points$date_direction) <= path.trace.n.max){
     if(is.function(updateProgress)) updateProgress('Adding paths')
-    plt.heatmap.base <- src.list$base.ggmap +
+    plt.heatmap.base <- src.list$ggmap.base +
       geom_path(
         data=active.points
         ,aes(
@@ -171,7 +173,7 @@ CreateHeatMap <- function(
         ,lty=2
       )
   } else {
-    plt.heatmap.base <- src.list$base.ggmap
+    plt.heatmap.base <- src.list$ggmap.base
   }
   
   if(is.function(updateProgress)) updateProgress('Compiling plot')
