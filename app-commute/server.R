@@ -15,6 +15,7 @@ print('Finished attempting to grab fresh database')
 print('Moving into reactive state')
 shinyServer(function(input, output, session) {
   
+  
   GetComponents <- reactive({
     
     print('Generating base components')
@@ -39,14 +40,37 @@ shinyServer(function(input, output, session) {
     i.components
   })
   
+  
+  GetActivePoints <- reactive({
+    ApplyFilters(
+      GetComponents()$tbl.points
+      ,active_directions = input$active_directions
+      ,active_date_range = input$active_date_range
+      ,active_departure_range = input$active_departure_range
+    ) %>%
+      arrange(date, time)
+  })
+  
+  
+  GetActiveTrips <- reactive({
+    ApplyFilters(
+      GetComponents()$tbl.trips
+      ,active_directions = input$active_directions
+      ,active_date_range = input$active_date_range
+      ,active_departure_range = input$active_departure_range
+    ) %>%
+      arrange(desc(date), desc(time_start_hours))
+  })
+  
+  
   ui_direction.initialized <- FALSE ## Indicator that we're still in the initialization phase
   output$ui_direction <- renderUI({
     
-    options.active.cnt <- GetActivePoints() %>%
+    options.active.cnt <- GetActiveTrips() %>%
       group_by(direction) %>%
-      summarize(n.trips = n_distinct(date_direction))
+      summarize(n.trips = n())
     
-    options.named <- GetComponents()$tbl.points %>%
+    options.named <- GetComponents()$tbl.trips %>%
       select(direction) %>%
       distinct() %>%
       left_join(options.active.cnt, by = 'direction') %>%
@@ -72,6 +96,7 @@ shinyServer(function(input, output, session) {
     )
   })
   
+  
   output$ui_dates <- renderUI({dateRangeInput(
     'active_date_range'
     ,'Commuting Dates'
@@ -83,7 +108,7 @@ shinyServer(function(input, output, session) {
   
   
   GetTimeRange <- reactive({
-    GetComponents()$tbl.points$time_start_hours %>%
+    GetComponents()$tbl.trips$time_start_hours %>%
       range() %>%
       multiply_by(c(0.99,1.01)) %>% {
         c(
@@ -92,6 +117,7 @@ shinyServer(function(input, output, session) {
         )
       }
   })
+  
   
   output$ui_time_departure <- renderUI({
     time_start.range <- GetTimeRange()
@@ -106,6 +132,7 @@ shinyServer(function(input, output, session) {
     )
   })
   
+  
   output$hist_departure_time <- renderPlot({
     time_start.range <- GetTimeRange()
     op <- par(mar = rep(0, 4))
@@ -119,15 +146,6 @@ shinyServer(function(input, output, session) {
     par(op)
   })
   
-  GetActivePoints <- reactive({
-    ApplyFilters(
-      GetComponents()$tbl.points
-      ,active_directions = input$active_directions
-      ,active_date_range = input$active_date_range
-      ,active_departure_range = input$active_departure_range
-    ) %>%
-      arrange(date, time)
-  })
   
   output$ui_n_paths_max <- renderUI({sliderInput(
     'path.trace.n.max'
@@ -135,7 +153,7 @@ shinyServer(function(input, output, session) {
       'Max # of Paths to Trace'
       ,'<br>'
       ,'(<i>'
-      ,GetActivePoints()$date_direction %>% n_distinct()
+      ,GetActiveTrips() %>% nrow()
       ,' paths currently active</i>)'
     ))
     ,min = 0L
@@ -143,6 +161,7 @@ shinyServer(function(input, output, session) {
     ,step = 1L
     ,value = 5L
   )})
+  
   
   output$heatmap <- renderPlot({
     progress <- shiny::Progress$new()
@@ -168,23 +187,12 @@ shinyServer(function(input, output, session) {
     )
   })
   
-  GetActiveTrips <- reactive({
-    ApplyFilters(
-      GetComponents()$tbl.trips
-      ,active_directions = input$active_directions
-      ,active_date_range = input$active_date_range
-      ,active_departure_range = input$active_departure_range
-    ) %>%
-      arrange(
-        desc(date)
-        ,desc(time_start_hours)
-      )
-  })
   
   output$tbl_trips <- renderDataTable(
     GetActiveTrips()
     ,options = list(orderClasses = TRUE)
   )
+  
   
   output$download_trips <- downloadHandler(
     filename = function() {paste0(
