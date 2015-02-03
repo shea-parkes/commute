@@ -88,10 +88,7 @@ ApplyFilters <- function(
   i.tbl %>%
     filter(direction %in% active_directions) %>%
     filter(between(date.parse, active_date_range[1], active_date_range[2])) %>%
-    filter(between(time_start, active_departure_range[1], active_departure_range[2])) %>% {
-      if('time' %in% names(.)) {arrange(., date, time)
-      } else {arrange(., desc(date), desc(time_start))}
-    }
+    filter(between(time_start, active_departure_range[1], active_departure_range[2]))
 }
 
 ColorRamp_DynamicAlpha <- function(

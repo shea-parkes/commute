@@ -125,7 +125,8 @@ shinyServer(function(input, output, session) {
       ,active_directions = input$active_directions
       ,active_date_range = input$active_date_range
       ,active_departure_range = input$active_departure_range
-    )
+    ) %>%
+      arrange(date, time)
   })
   
   output$ui_n_paths_max <- renderUI({sliderInput(
