@@ -24,7 +24,11 @@ shinyServer(function(input, output, session) {
     progress$set(message = "Initializing Mapping Assets", value = 0)
     
     progress$set(detail = 'Connecting to database', value = 0.1)
-    src.commute <- src_sqlite('commute.sqlite') %T>% print()
+    if(is.null(input$db_upload)) {
+      src.commute <- src_sqlite('commute.sqlite') %T>% print()
+    } else {
+      src.commute <- src_sqlite(input$db_upload$datapath) %T>% print()
+    }
     
     updateProgress <- function(detail = NULL, value.reduce.pct = 0.2) {
       value.current <- progress$getValue()
@@ -37,6 +41,17 @@ shinyServer(function(input, output, session) {
       ,updateProgress = updateProgress
     )
     print('Finished generating base components')
+    
+    if(!is.null(input$db_upload)) {
+      updateProgress('Temporarily caching uploaded database')
+      ## Isn't written to stored virtual instance on shinyapps.io so will be lost after ~sleep
+      file.copy(
+        input$db_upload$datapath
+        ,paste0(getwd(), 'commute.sqlite')
+        ,overwrite = TRUE
+      )
+    }
+    
     i.components
   })
   

@@ -38,6 +38,10 @@ fluidPage(
         )
         ,tabPanel(
           'Advanced'
+          ,fileInput(
+            'db_upload'
+            ,HTML('Upload new database<br>(<i>not guaranteed to persist</i>)')
+          )
           ,conditionalPanel(
             condition = "input.tabs_main == 'heatmap'"
             ,sliderInput(
