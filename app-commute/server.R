@@ -75,15 +75,15 @@ shinyServer(function(input, output, session) {
   output$ui_dates <- renderUI({dateRangeInput(
     'active_date_range'
     ,'Commuting Dates'
-    ,start = GetComponents()$tbl.points$date.parse %>% min()
-    ,end = GetComponents()$tbl.points$date.parse %>% max()
-    ,min = GetComponents()$tbl.points$date.parse %>% min()
-    ,max = GetComponents()$tbl.points$date.parse %>% max()
+    ,start = GetComponents()$tbl.points$date %>% min()
+    ,end = GetComponents()$tbl.points$date %>% max()
+    ,min = GetComponents()$tbl.points$date %>% min()
+    ,max = GetComponents()$tbl.points$date %>% max()
   )})
   
   
   GetTimeRange <- reactive({
-    GetComponents()$tbl.points$time_start %>%
+    GetComponents()$tbl.points$time_start_hours %>%
       range() %>%
       multiply_by(c(0.99,1.01)) %>% {
         c(
@@ -169,34 +169,12 @@ shinyServer(function(input, output, session) {
   })
   
   GetActiveTrips <- reactive({
-    long.mean <- GetComponents()$tbl.points$long %>% mean()
-    
-    GetActivePoints() %>%
-      select(
-        date.parse
-        ,direction
-        ,time_start
-        ,duration
-        ,long
-      ) %>%
-      rename(
-        date = date.parse
-        ,time_start_hours = time_start
-        ,duration_minutes = duration
-      ) %>%
-      mutate(
-        time_start_hours = round(time_start_hours, 2)
-        ,long.deviance = abs(long - long.mean)
-      ) %>%
-      group_by(
-        date
-        ,direction
-        ,time_start_hours
-        ,duration_minutes
-      ) %>%
-      summarize(
-        longitude_widest = long[which.max(long.deviance)]
-      ) %>%
+    ApplyFilters(
+      GetComponents()$tbl.trips
+      ,active_directions = input$active_directions
+      ,active_date_range = input$active_date_range
+      ,active_departure_range = input$active_departure_range
+    ) %>%
       arrange(
         desc(date)
         ,desc(time_start_hours)

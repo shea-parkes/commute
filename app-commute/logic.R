@@ -12,8 +12,8 @@ MungeCommuteDB <- function(src.commute, updateProgress = NULL) {
   tbl.points <- tbl(src.commute, sql("
     SELECT
       src.*
-      ,ref.duration_min as duration
-      ,(ref.time - ref.duration_min/60) as time_start
+      ,ref.duration_min as duration_minutes
+      ,(ref.time - ref.duration_min/60) as time_start_hours
     FROM location as src
     INNER JOIN commute as ref on
     src.date = ref.date
@@ -22,10 +22,44 @@ MungeCommuteDB <- function(src.commute, updateProgress = NULL) {
     ")) %>%
     collect() %>%
     mutate(
-      date.parse = as.Date(date, '%m-%d-%Y')
+      date = as.Date(date, '%m-%d-%Y')
       ,direction = factor(ifelse(time>12, 'Evening', 'Morning'), levels=c('Morning', 'Evening'))
-      ,date_direction = factor(paste(date.parse, as.character(direction), sep='_'))
-    ) %T>% str()
+      ,date_direction = factor(paste(date, as.character(direction), sep='_'))
+    ) %>%
+    select(-datetime_measure) %T>%
+    str()
+  
+  work.long <- tbl.points %>%
+    filter(direction == 'Morning') %>%
+    group_by(date) %>%
+    summarize(work.long = long[which.max(time)]) %$%
+    mean(work.long, trim=0.1) %T>%
+    print()
+  
+  tbl.trips <- tbl.points %>%
+    mutate(
+      time_start_hours = round(time_start_hours, 2)
+      ,long.deviance = abs(long - work.long)
+    ) %>%
+    group_by(
+      date
+      ,direction
+      ,time_start_hours
+      ,duration_minutes
+    ) %>%
+    summarize(
+      longitude_widest = long[which.max(long.deviance)]
+    ) %>%
+    ungroup() %T>%
+    str()
+  
+  tbl.points %<>% left_join(
+    tbl.trips %>% select(
+      date
+      ,direction
+      ,longitude_widest
+    )
+  ) %T>% str()
   
   i.bbox <- make_bbox(long, lat, tbl.points, f = 0.1)
   
@@ -62,6 +96,7 @@ MungeCommuteDB <- function(src.commute, updateProgress = NULL) {
   
   return(list(
     tbl.points = tbl.points
+    ,tbl.trips = tbl.trips
     ,i.bbox = i.bbox
     ,i.osm = i.osm
     ,ggmap.base = ggmap.base
@@ -72,8 +107,8 @@ MungeCommuteDB <- function(src.commute, updateProgress = NULL) {
 ApplyFilters <- function(
   i.tbl
   ,active_directions = levels(i.tbl$direction)
-  ,active_date_range = range(i.tbl$date.parse)
-  ,active_departure_range = range(i.tbl$time_start)
+  ,active_date_range = range(i.tbl$date)
+  ,active_departure_range = range(i.tbl$time_start_hours)
 ) {
   validate(need(
     diff(active_date_range) >= 0
@@ -87,8 +122,8 @@ ApplyFilters <- function(
   
   i.tbl %>%
     filter(direction %in% active_directions) %>%
-    filter(between(date.parse, active_date_range[1], active_date_range[2])) %>%
-    filter(between(time_start, active_departure_range[1], active_departure_range[2]))
+    filter(between(date, active_date_range[1], active_date_range[2])) %>%
+    filter(between(time_start_hours, active_departure_range[1], active_departure_range[2]))
 }
 
 ColorRamp_DynamicAlpha <- function(
@@ -111,7 +146,7 @@ CreateHeatMap <- function(
   ,path.trace.n.max = 5L
   ,updateProgress = NULL
 ) {
-  #src.list <- i.components; active.points <- ApplyFilters(src.list$tbl.points)
+  #src.list <- i.components; active.points <- ApplyFilters(src.list$tbl.points) %>% arrange(date, time)
   #kernel_bandwidth_miles <- 0.5; kernel_function_power <- 3
   #alpha_saturation_limit <- 0.95; alpha_transform_power <- 0.5; duration_winsor_percent <- 0.05
   
