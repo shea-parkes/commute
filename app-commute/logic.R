@@ -268,3 +268,50 @@ ScatterLongitudeWidest <- function(active.trips) { ##active.trips <- i.component
   plt.long
   
 }
+
+ScatterDepartureTime <- function(active.trips) { ##active.trips <- i.components$tbl.trips
+  
+  df.time <- active.trips %>%
+    mutate(
+      time_start_today = Sys.time() %>%
+        as.POSIXlt() %>% {
+          ISOdate(
+            .$year + 1900
+            ,.$mon
+            ,.$mday
+            ,hour = 0
+          ) + 
+            time_start_hours*60*60
+        }
+    )
+  
+  plt.depart.time <- ggplot(
+    df.time
+    ,aes(
+      x = time_start_today
+      ,y = duration_minutes
+    )
+  ) +
+    facet_wrap(~direction, scales = 'free_x') +
+    geom_point(
+      size = 5
+      ,alpha = 0.5
+      ,color = muted('blue')
+    ) +
+    stat_quantile(
+      formula = as.formula(y~ns(x, 1))
+      ,quantiles = seq(0.2, 0.8, 0.3)
+      ,aes(color = ..quantile..)
+    ) +
+    scale_y_continuous('Commute Duration (Minutes)') +
+    scale_x_datetime('Time of Departure') +
+    scale_color_gradientn(
+      'Quantile'
+      ,colours =  c('orange', 'red')
+      ,labels = percent_format()
+    ) +
+    theme_light()
+  
+  plt.depart.time
+  
+}

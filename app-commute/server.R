@@ -227,4 +227,8 @@ shinyServer(function(input, output, session) {
   output$plt_longitude_widest <- renderPlot({
     ScatterLongitudeWidest(GetActiveTrips())
   })
+  
+  output$plt_departure_time <- renderPlot({
+    ScatterDepartureTime(GetActiveTrips())
+  })
 })
