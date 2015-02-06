@@ -223,4 +223,8 @@ shinyServer(function(input, output, session) {
       )
     }
   )
+  
+  output$plt_longitude_widest <- renderPlot({
+    ScatterLongitudeWidest(GetActiveTrips())
+  })
 })

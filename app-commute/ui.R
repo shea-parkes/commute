@@ -97,6 +97,11 @@ fluidPage(
           ,dataTableOutput('tbl_trips')
           ,value = 'triptable'
         )
+        ,tabPanel(
+          'Scatter Longitude'
+          ,plotOutput('plt_longitude_widest')
+          ,value = 'scatter_longitude'
+        )
       )
     )
   )

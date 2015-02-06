@@ -5,6 +5,8 @@ library(ggmap)
 library(scales)
 library(RColorBrewer)
 library(spam)
+library(quantreg)
+library(splines)
 
 MungeCommuteDB <- function(src.commute, updateProgress = NULL) {
   
@@ -233,4 +235,36 @@ CreateHeatMap <- function(
     )
   
   return(plt.heatmap)
+}
+
+ScatterLongitudeWidest <- function(active.trips) { ##active.trips <- i.components$tbl.trips
+  
+  plt.long <- ggplot(
+    active.trips
+    ,aes(
+      x = longitude_widest
+      ,y = duration_minutes
+    )
+  ) +
+    geom_point(
+      size = 5
+      ,alpha = 0.5
+      ,color = muted('blue')
+    ) +
+    stat_quantile(
+      formula = as.formula(y~ns(x, 2))
+      ,quantiles = seq(0.2, 0.8, 0.3)
+      ,aes(color = ..quantile..)
+    ) +
+    scale_y_continuous('Commute Duration (Minutes)') +
+    scale_x_continuous('Widest Longitude Observed During Commute') +
+    scale_color_gradientn(
+      'Quantile'
+      ,colours =  c('orange', 'red')
+      ,labels = percent_format()
+    ) +
+    theme_light()
+  
+  plt.long
+  
 }
