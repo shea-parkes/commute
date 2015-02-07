@@ -1,6 +1,6 @@
 library(shiny)
 print('Initializing Shiny App')
-
+url.commute.db <- 'https://drive.google.com/uc?export=download&id=0B3TYv-_BTJyHakxhQ3I2ZmZXMjQ'
 
 print('Loading logic file')
 source('logic.R')
@@ -25,7 +25,15 @@ shinyServer(function(input, output, session) {
     
     progress$set(detail = 'Connecting to database', value = 0.1)
     if(is.null(input$db_upload)) {
-      src.commute <- src_sqlite('commute.sqlite') %T>% print()
+      src.commute <- tryCatch({
+        download.file(url.commute.db, 'commute.fresh.sqlite', method='internal', mode='wb')
+        tmp.src <- src_sqlite('commute.fresh.sqlite')
+        print('Grabbed fresh database from Google Drive successfully')
+        file.copy('commute.fresh.sqlite', 'commute.sqlite', overwrite = TRUE)
+        tmp.src
+      }
+      ,error = function(cond) {src_sqlite('commute.sqlite')}
+      ) %T>% print()
     } else {
       src.commute <- src_sqlite(input$db_upload$datapath) %T>% print()
     }
