@@ -77,7 +77,7 @@ fluidPage(
               ,min = 0
               ,max = 0.1
               ,step = 0.01
-              ,value = 0.01
+              ,value = 0.05
               ,round = -2
             )
           )
